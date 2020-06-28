@@ -36,7 +36,7 @@ class Blockchain:
         self.chain.append(block)
         return block
 
-    def new_transaction(self, sender, recipient, amount) -> int:
+    def new_transaction(self, sender, recipient, amount)-> int:
         self.current_transactions.append(
             {
                 'sender': sender,
@@ -54,3 +54,20 @@ class Blockchain:
     @property
     def last_block(self):
         return self.chain(-1)
+
+    def proof_of_work(self, last_proof: int) -> int:
+        proof = 0
+        while self.valid_proof(last_proof, proof) is False:
+            proof += 1
+
+        print(proof)
+        return proof
+
+    def valid_proof(self, last_proof: int, proof: int ) -> bool:
+        guess = f'{last_proof}{proof}'.encode()
+        guess_hash = hashlib.sha256(guess).hexdigest()
+        print(guess_hash)
+        return guess_hash[0:4] == "0000"
+
+testPow = Blockchain()
+testPow.proof_of_work(100)
