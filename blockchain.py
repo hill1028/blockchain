@@ -17,7 +17,7 @@ import json
 from time import time
 
 from flask import Flask, jsonify, request
-
+from uuid import uuid4
 
 class Blockchain:
 
@@ -62,18 +62,19 @@ class Blockchain:
         proof = 0
         while self.valid_proof(last_proof, proof) is False:
             proof += 1
-        print(proof)
+
         return proof
 
     def valid_proof(self, last_proof: int, proof: int) -> bool:
         guess = f'{last_proof}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
-        print(guess_hash)
-        return guess_hash[0:4] == "0000"
+
+        return guess_hash[0:3] == "000"
 
 
 app = Flask(__name__)
 blockchain = Blockchain()
+node_identifier = str(uuid4()).replace('-', '')
 
 
 @app.route('/index', methods=['get'])
@@ -103,6 +104,24 @@ def mine():
     last_proof = last_block['proof']
     proof = blockchain.proof_of_work(last_proof)
 
+    #挖矿奖励
+    blockchain.new_transaction(
+        sender="0",
+        recipient=node_identifier,
+        amount=1
+    )
+
+    block = blockchain.new_block(proof, None)
+
+    response = {
+        'message': "New block Forged",
+        'index': block['index'],
+        'transactions': block['transactions'],
+        'proof': block['proof'],
+        'previous_hash': block['previous_hash']
+    }
+
+    return jsonify(response), 200
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
