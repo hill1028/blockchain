@@ -71,8 +71,6 @@ class Blockchain:
         return False
 
 
-
-
     def new_block(self, proof, previous_hash=None):
         block = {
             'index': len(self.chain) + 1,
@@ -170,6 +168,7 @@ def mine():
 
     return jsonify(response), 200
 
+
 @app.route('/chain', methods=['GET'])
 def full_chain():
     response = {
@@ -177,6 +176,7 @@ def full_chain():
         'len': len(blockchain.chain)
     }
     return jsonify(response), 200
+
 
 @app.route('/nodes/register', methods=['POST'])
 def register_nodes():
@@ -199,5 +199,23 @@ def register_nodes():
 
     return jsonify(response), 200
 
+
+@app.route('/nodes/resolve', methods='GET')
+def consensus():
+    if blockchain.resolve_conflicts():
+        response = {
+            'message': "Our chain was replaced.",
+            'new_chain': blockchain.chain
+        }
+    else:
+        response = {
+            'message': "Our chain is authoritative.",
+            'new_chain': blockchain.chain
+        }
+
+    return jsonify(response), 200
+
+
 if __name__ == '__main__':
+    from argparse import ArgumentParser
     app.run(host='0.0.0.0', port=5000)
