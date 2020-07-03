@@ -17,6 +17,7 @@ import json
 from time import time
 from urllib.parse import urlparse
 
+import requests
 from flask import Flask, jsonify, request
 from uuid import uuid4
 
@@ -41,7 +42,7 @@ class Blockchain:
             if block['previous_hash'] != self.hash(last_block):
                 return False
 
-            if self.valid_proof(last_block['proof'], block['proof']):
+            if not self.valid_proof(last_block['proof'], block['proof']):
                 return False
 
             last_block = block
@@ -55,14 +56,15 @@ class Blockchain:
         new_chain = None
 
         for node in neighbours:
-            response = request.get(f'http://{node}/chain')
+            response = requests.get(f'http://{node}/chain')
+
             if response.status_code == 200:
-                length = response.json()['length']
+                length = response.json()['len']
                 chain = response.json()['chain']
 
                 if len(chain) > max_length and self.valid_chain(chain):
                     new_chain = chain
-                    max_length =length
+                    max_length = length
 
         if new_chain:
             self.chain = new_chain
@@ -200,7 +202,7 @@ def register_nodes():
     return jsonify(response), 200
 
 
-@app.route('/nodes/resolve', methods='GET')
+@app.route('/nodes/resolve', methods=['GET'])
 def consensus():
     if blockchain.resolve_conflicts():
         response = {
@@ -218,4 +220,10 @@ def consensus():
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
-    app.run(host='0.0.0.0', port=5000)
+
+    parser = ArgumentParser()
+    parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen to')
+    args = parser.parse_args()
+    port = args.port
+    app.run(host='0.0.0.0', port=port)
+
